@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Contacts">
-<title>Contacts Swiper 4</title>
+<title>Contacts Swiper 5</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -426,16 +426,19 @@ function startLogin() {
 }
 
 function checkAuth() {
+  console.log('checkAuth: search=', location.search, 'hash=', location.hash);
   // Check if token was passed via URL from callback.html
   const params = new URLSearchParams(location.search);
   const token = params.get('token');
   const expiry = params.get('expiry');
+  console.log('checkAuth: url token=', token ? 'present' : 'null', 'expiry=', expiry);
   if (token && expiry) {
     accessToken = token;
     try {
       localStorage.setItem('gac_token', token);
       localStorage.setItem('gac_expiry', expiry);
-    } catch(e) {}
+      console.log('checkAuth: saved to localStorage via URL token');
+    } catch(e) { console.log('checkAuth: localStorage save failed', e); }
     history.replaceState(null, '', location.pathname);
     initApp();
     return;
@@ -444,11 +447,14 @@ function checkAuth() {
   try {
     const saved = localStorage.getItem('gac_token');
     const savedExpiry = parseInt(localStorage.getItem('gac_expiry') || '0');
+    console.log('checkAuth: localStorage token=', saved ? 'present' : 'null', 'expiry=', savedExpiry, 'now=', Date.now(), 'valid=', saved && Date.now() < savedExpiry);
     if (saved && Date.now() < savedExpiry) { accessToken = saved; initApp(); return; }
-  } catch(e) {}
+  } catch(e) { console.log('checkAuth: localStorage read failed', e); }
+  console.log('checkAuth: no valid token found, staying on login');
 }
 
 async function initApp() {
+  console.log('initApp: accessToken=', accessToken ? 'present' : 'null');
   try {
     const res = await gapi('https://www.googleapis.com/oauth2/v3/userinfo');
     const name = res.given_name || res.name || 'there';
@@ -465,6 +471,7 @@ async function initApp() {
 }
 
 function signOut() {
+  console.log('signOut called');
   try { localStorage.removeItem('gac_token'); localStorage.removeItem('gac_expiry'); } catch(e) {}
   accessToken = null;
   showScreen('login');
@@ -481,6 +488,7 @@ async function gapi(url, params = {}) {
 
 // ── SCREENS ───────────────────────────────────────────
 function showScreen(name) {
+  console.log('showScreen:', name, 'accessToken=', accessToken ? 'present' : 'null');
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
   if (name === 'labels') loadLabels();
@@ -496,6 +504,7 @@ function showSearch() { showScreen('search'); }
 let labelsCache = null;
 
 async function loadLabels() {
+  console.log('loadLabels: accessToken=', accessToken ? 'present' : 'null');
   const list = document.getElementById('labels-list');
   if (labelsCache) { renderLabels(labelsCache); return; }
   list.innerHTML = '<div class="loading"><div class="spinner"></div>Loading labels…</div>';
