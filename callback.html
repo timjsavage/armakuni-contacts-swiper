@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head><title>Auth</title></head>
+<body>
+<script>
+  const hash = new URLSearchParams(location.hash.slice(1));
+  const token = hash.get('access_token');
+  const expiry = hash.get('expires_in');
+  if (token) {
+    localStorage.setItem('gac_token', token);
+    localStorage.setItem('gac_expiry', String(Date.now() + parseInt(expiry||'3600')*1000));
+  }
+  window.location.href = 'armakuni-contacts-swiper.html';
+</script>
+</body>
+</html>
