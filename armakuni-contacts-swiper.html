@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Contacts">
+<title>Contacts Swiper</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #0f0f0f;
+    --bg2: #1c1c1e;
+    --bg3: #2c2c2e;
+    --text: #ffffff;
+    --text2: #ebebf5cc;
+    --text3: #ebebf599;
+    --accent: #0a84ff;
+    --accent2: #30d158;
+    --danger: #ff453a;
+    --radius: 16px;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; flex-direction: column; height: 100dvh; }
+  .screen.active { display: flex; }
+
+  /* ── LOGIN SCREEN ── */
+  #screen-login {
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+    padding: 40px 24px;
+    background: linear-gradient(180deg, #1a1a2e 0%, #0f0f0f 100%);
+  }
+  .login-icon {
+    width: 88px; height: 88px; border-radius: 24px;
+    background: var(--bg3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 44px;
+  }
+  .login-title { font-size: 28px; font-weight: 700; text-align: center; }
+  .login-sub { font-size: 15px; color: var(--text3); text-align: center; line-height: 1.5; }
+  .btn-google {
+    display: flex; align-items: center; gap: 12px;
+    background: #fff; color: #1f1f1f;
+    border: none; border-radius: 12px;
+    padding: 14px 24px; font-size: 16px; font-weight: 600;
+    cursor: pointer; width: 100%; max-width: 320px;
+    justify-content: center;
+  }
+  .btn-google svg { flex-shrink: 0; }
+  .btn-google:active { opacity: 0.85; transform: scale(0.98); }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    padding: calc(var(--safe-top) + 12px) 16px 12px;
+    display: flex; align-items: center; gap: 12px;
+    background: var(--bg2);
+    border-bottom: 0.5px solid #ffffff22;
+    flex-shrink: 0;
+  }
+  .topbar-title { font-size: 18px; font-weight: 600; flex: 1; }
+  .btn-icon {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--bg3); border: none; color: var(--text);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 18px; flex-shrink: 0;
+  }
+  .btn-icon:active { opacity: 0.7; }
+  .user-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    object-fit: cover; flex-shrink: 0;
+    background: var(--bg3); cursor: pointer;
+  }
+  .user-initials {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--accent); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600; flex-shrink: 0; cursor: pointer;
+  }
+
+  /* ── HOME SCREEN ── */
+  #screen-home { background: var(--bg); }
+  .home-body { flex: 1; padding: 24px 20px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
+  .home-greeting { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+  .home-sub { font-size: 14px; color: var(--text3); margin-bottom: 8px; }
+  .home-card {
+    background: var(--bg2); border-radius: var(--radius);
+    padding: 20px; border: 0.5px solid #ffffff18;
+    cursor: pointer; display: flex; align-items: center; gap: 16px;
+    transition: background 0.15s;
+  }
+  .home-card:active { background: var(--bg3); }
+  .home-card-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; flex-shrink: 0;
+  }
+  .home-card-icon.blue { background: #0a84ff22; }
+  .home-card-icon.green { background: #30d15822; }
+  .home-card-text h3 { font-size: 16px; font-weight: 600; margin-bottom: 3px; }
+  .home-card-text p { font-size: 13px; color: var(--text3); line-height: 1.4; }
+  .home-card-arrow { margin-left: auto; color: var(--text3); font-size: 18px; flex-shrink: 0; }
+
+  /* ── LABEL LIST SCREEN ── */
+  #screen-labels { background: var(--bg); }
+  .list-body { flex: 1; overflow-y: auto; padding: 8px 0 calc(var(--safe-bottom) + 8px); }
+  .label-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 20px; cursor: pointer; border-bottom: 0.5px solid #ffffff0f;
+  }
+  .label-item:active { background: var(--bg3); }
+  .label-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+  .label-name { font-size: 16px; flex: 1; }
+  .label-count { font-size: 13px; color: var(--text3); }
+  .label-chevron { color: var(--text3); font-size: 16px; }
+  .empty-state { text-align: center; padding: 60px 24px; color: var(--text3); }
+  .empty-state p { font-size: 15px; line-height: 1.6; }
+  .loading { text-align: center; padding: 60px 24px; color: var(--text3); font-size: 15px; }
+
+  /* ── SEARCH SCREEN ── */
+  #screen-search { background: var(--bg); }
+  .search-bar-wrap { padding: 12px 16px; background: var(--bg2); }
+  .search-input-row { display: flex; align-items: center; gap: 10px; background: var(--bg3); border-radius: 12px; padding: 10px 14px; }
+  .search-input-row span { font-size: 16px; }
+  .search-input {
+    background: none; border: none; outline: none;
+    color: var(--text); font-size: 16px; flex: 1; min-width: 0;
+  }
+  .search-input::placeholder { color: var(--text3); }
+  .search-results { flex: 1; overflow-y: auto; }
+  .search-result-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 20px; cursor: pointer; border-bottom: 0.5px solid #ffffff0f;
+  }
+  .search-result-item:active { background: var(--bg3); }
+  .contact-thumb {
+    width: 44px; height: 44px; border-radius: 50%;
+    object-fit: cover; flex-shrink: 0;
+  }
+  .contact-thumb-initials {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--bg3); display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 600; flex-shrink: 0; color: var(--text2);
+  }
+  .search-result-name { font-size: 16px; }
+  .search-result-sub { font-size: 13px; color: var(--text3); margin-top: 2px; }
+
+  /* ── SWIPER SCREEN ── */
+  #screen-swiper {
+    background: #000;
+    position: relative;
+  }
+  .swiper-topbar {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+    padding: calc(var(--safe-top) + 12px) 16px 12px;
+    display: flex; align-items: center; gap: 12px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
+  }
+  .swiper-title { font-size: 15px; font-weight: 600; flex: 1; text-align: center; }
+  .swiper-counter { font-size: 13px; color: rgba(255,255,255,0.7); }
+
+  .card-stage {
+    width: 100%; height: 100dvh;
+    position: relative; overflow: hidden;
+    touch-action: pan-y;
+  }
+  .contact-card {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-end;
+    will-change: transform;
+    transition: none;
+  }
+  .contact-card.animating { transition: transform 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+
+  .card-photo {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  .card-photo-placeholder {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 12px;
+    background: var(--bg2);
+  }
+  .card-initials-big {
+    width: 120px; height: 120px; border-radius: 50%;
+    background: var(--bg3); display: flex; align-items: center; justify-content: center;
+    font-size: 48px; font-weight: 700; color: var(--text);
+  }
+  .card-no-photo-name { font-size: 22px; font-weight: 700; color: var(--text); }
+
+  .card-gradient {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 55%;
+    background: linear-gradient(0deg, rgba(0,0,0,0.88) 0%, transparent 100%);
+    pointer-events: none;
+  }
+  .card-info {
+    position: relative; z-index: 2;
+    width: 100%; padding: 16px 20px calc(var(--safe-bottom) + 20px);
+  }
+  .card-name { font-size: 26px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .card-company { font-size: 15px; color: rgba(255,255,255,0.75); margin-bottom: 12px; }
+  .card-details-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .card-detail-pill {
+    background: rgba(255,255,255,0.15); backdrop-filter: blur(8px);
+    border-radius: 20px; padding: 7px 14px;
+    font-size: 13px; color: #fff; display: flex; align-items: center; gap: 6px;
+    text-decoration: none; cursor: pointer; border: none;
+  }
+  .card-detail-pill:active { background: rgba(255,255,255,0.25); }
+
+  /* no-photo mode shows data prominently */
+  .card-nophoto-data {
+    position: absolute; inset: 0; z-index: 2;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 80px 28px 40px;
+    gap: 10px;
+  }
+  .nophoto-name { font-size: 30px; font-weight: 700; margin-bottom: 8px; }
+  .nophoto-row { font-size: 15px; color: var(--text2); display: flex; gap: 10px; align-items: center; }
+  .nophoto-label { font-size: 12px; color: var(--text3); min-width: 60px; }
+
+  .swipe-hint {
+    position: absolute; bottom: calc(var(--safe-bottom) + 80px);
+    left: 50%; transform: translateX(-50%);
+    display: flex; gap: 24px; z-index: 5;
+    opacity: 0; animation: fadeHint 3s ease 1s forwards;
+  }
+  @keyframes fadeHint {
+    0% { opacity: 0; } 15% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; }
+  }
+  .hint-arrow { color: rgba(255,255,255,0.6); font-size: 26px; }
+
+  /* nav dots */
+  .nav-dots {
+    position: absolute; bottom: calc(var(--safe-bottom) + 8px);
+    left: 0; right: 0; display: flex; justify-content: center; gap: 5px; z-index: 5;
+  }
+  .nav-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: rgba(255,255,255,0.35); transition: background 0.2s, width 0.2s;
+  }
+  .nav-dot.active { background: #fff; width: 16px; border-radius: 3px; }
+
+  /* tap to reveal data overlay */
+  .data-overlay {
+    position: absolute; inset: 0; z-index: 20;
+    background: rgba(0,0,0,0.85);
+    display: none; flex-direction: column;
+    justify-content: flex-end;
+    padding: 20px 20px calc(var(--safe-bottom) + 20px);
+    backdrop-filter: blur(4px);
+  }
+  .data-overlay.visible { display: flex; }
+  .data-overlay-close {
+    position: absolute; top: calc(var(--safe-top) + 16px); right: 16px;
+    background: rgba(255,255,255,0.15); border: none; color: #fff;
+    border-radius: 50%; width: 36px; height: 36px; font-size: 20px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .data-overlay h2 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+  .data-overlay .sub { font-size: 15px; color: rgba(255,255,255,0.65); margin-bottom: 20px; }
+  .data-field { padding: 12px 0; border-bottom: 0.5px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 3px; }
+  .data-field:last-child { border-bottom: none; }
+  .data-field-label { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.6px; }
+  .data-field-value { font-size: 16px; color: #fff; }
+  .data-field-value a { color: var(--accent); text-decoration: none; }
+  .tap-hint {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-size: 12px; color: rgba(255,255,255,0.4); pointer-events: none;
+    text-align: center; z-index: 3;
+  }
+
+  /* ── SPINNER ── */
+  .spinner {
+    width: 28px; height: 28px; border: 3px solid rgba(255,255,255,0.15);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.7s linear infinite; margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── ERROR TOAST ── */
+  .toast {
+    position: fixed; bottom: calc(var(--safe-bottom) + 24px); left: 20px; right: 20px;
+    background: var(--danger); color: #fff; border-radius: 12px;
+    padding: 14px 18px; font-size: 14px; z-index: 999;
+    display: none; text-align: center;
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .toast.show { display: block; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="screen-login" class="screen active">
+  <div class="login-icon">👤</div>
+  <div>
+    <div class="login-title">Contacts Swiper</div>
+    <div class="login-sub" style="margin-top:8px;">Browse your Google Contacts<br>quickly at events</div>
+  </div>
+  <button class="btn-google" onclick="startLogin()">
+    <svg width="20" height="20" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+    Sign in with Google
+  </button>
+</div>
+
+<!-- HOME -->
+<div id="screen-home" class="screen">
+  <div class="topbar">
+    <div class="topbar-title">Contacts Swiper</div>
+    <div id="user-avatar-wrap"></div>
+  </div>
+  <div class="home-body">
+    <div class="home-greeting" id="home-greeting">Hello!</div>
+    <div class="home-sub">What would you like to do?</div>
+    <div class="home-card" onclick="showLabels()">
+      <div class="home-card-icon blue">🏷️</div>
+      <div class="home-card-text">
+        <h3>Browse by label</h3>
+        <p>Pick a label and swipe through photos</p>
+      </div>
+      <div class="home-card-arrow">›</div>
+    </div>
+    <div class="home-card" onclick="showSearch()">
+      <div class="home-card-icon green">🔍</div>
+      <div class="home-card-text">
+        <h3>Search contacts</h3>
+        <p>Find someone by name quickly</p>
+      </div>
+      <div class="home-card-arrow">›</div>
+    </div>
+  </div>
+</div>
+
+<!-- LABELS -->
+<div id="screen-labels" class="screen">
+  <div class="topbar">
+    <button class="btn-icon" onclick="showScreen('home')">‹</button>
+    <div class="topbar-title">Labels</div>
+  </div>
+  <div class="list-body" id="labels-list">
+    <div class="loading"><div class="spinner"></div>Loading labels…</div>
+  </div>
+</div>
+
+<!-- SEARCH -->
+<div id="screen-search" class="screen">
+  <div class="topbar">
+    <button class="btn-icon" onclick="showScreen('home')">‹</button>
+    <div class="topbar-title">Search</div>
+  </div>
+  <div class="search-bar-wrap">
+    <div class="search-input-row">
+      <span>🔍</span>
+      <input class="search-input" id="search-input" placeholder="Search contacts…" autocomplete="off" autocorrect="off" spellcheck="false" oninput="onSearch(this.value)">
+    </div>
+  </div>
+  <div class="search-results" id="search-results">
+    <div class="empty-state"><p>Type a name to find contacts</p></div>
+  </div>
+</div>
+
+<!-- SWIPER -->
+<div id="screen-swiper" class="screen">
+  <div class="swiper-topbar">
+    <button class="btn-icon" style="background:rgba(0,0,0,0.4);flex-shrink:0;" onclick="exitSwiper()">‹</button>
+    <div class="swiper-title" id="swiper-label-name"></div>
+    <div class="swiper-counter" id="swiper-counter"></div>
+  </div>
+  <div class="card-stage" id="card-stage">
+    <div class="loading" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+      <div class="spinner"></div>Loading contacts…
+    </div>
+  </div>
+  <div class="nav-dots" id="nav-dots"></div>
+  <div class="data-overlay" id="data-overlay">
+    <button class="data-overlay-close" onclick="closeOverlay()">×</button>
+    <div id="overlay-content"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CLIENT_ID = '779598607633-u675os3q2t8deii93kfplk37obhdg2p0.apps.googleusercontent.com';
+const SCOPES = 'https://www.googleapis.com/auth/contacts.readonly';
+let accessToken = null;
+let currentContacts = [];
+let currentIdx = 0;
+let startX = 0, startY = 0, diffX = 0;
+let isDragging = false;
+let searchTimer = null;
+
+// ── AUTH ──────────────────────────────────────────────
+function startLogin() {
+  const params = new URLSearchParams({
+    client_id: CLIENT_ID,
+    redirect_uri: location.origin + location.pathname,
+    response_type: 'token',
+    scope: SCOPES,
+    prompt: 'select_account'
+  });
+  location.href = 'https://accounts.google.com/o/oauth2/auth?' + params;
+}
+
+function checkAuth() {
+  const hash = new URLSearchParams(location.hash.slice(1));
+  const token = hash.get('access_token');
+  if (token) {
+    accessToken = token;
+    history.replaceState(null, '', location.pathname);
+    initApp();
+    return;
+  }
+  const saved = sessionStorage.getItem('gac_token');
+  if (saved) { accessToken = saved; initApp(); }
+}
+
+async function initApp() {
+  sessionStorage.setItem('gac_token', accessToken);
+  try {
+    const res = await gapi('https://www.googleapis.com/oauth2/v3/userinfo');
+    const name = res.given_name || res.name || 'there';
+    document.getElementById('home-greeting').textContent = 'Hello, ' + name + '!';
+    const avatarWrap = document.getElementById('user-avatar-wrap');
+    if (res.picture) {
+      avatarWrap.innerHTML = `<img src="${res.picture}" class="user-avatar" onclick="signOut()" title="Sign out">`;
+    } else {
+      const initials = (res.name || '?').split(' ').map(w => w[0]).slice(0,2).join('');
+      avatarWrap.innerHTML = `<div class="user-initials" onclick="signOut()" title="Sign out">${initials}</div>`;
+    }
+  } catch(e) {}
+  showScreen('home');
+}
+
+function signOut() {
+  if (!confirm('Sign out?')) return;
+  sessionStorage.removeItem('gac_token');
+  accessToken = null;
+  showScreen('login');
+}
+
+// ── API HELPER ────────────────────────────────────────
+async function gapi(url, params = {}) {
+  const qs = Object.keys(params).length ? '?' + new URLSearchParams(params) : '';
+  const r = await fetch(url + qs, { headers: { Authorization: 'Bearer ' + accessToken } });
+  if (r.status === 401) { signOut(); throw new Error('Auth expired'); }
+  if (!r.ok) throw new Error('API error ' + r.status);
+  return r.json();
+}
+
+// ── SCREENS ───────────────────────────────────────────
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  if (name === 'labels') loadLabels();
+  if (name === 'search') {
+    setTimeout(() => document.getElementById('search-input').focus(), 200);
+  }
+}
+
+function showLabels() { showScreen('labels'); }
+function showSearch() { showScreen('search'); }
+
+// ── LABELS ────────────────────────────────────────────
+let labelsCache = null;
+
+async function loadLabels() {
+  const list = document.getElementById('labels-list');
+  if (labelsCache) { renderLabels(labelsCache); return; }
+  list.innerHTML = '<div class="loading"><div class="spinner"></div>Loading labels…</div>';
+  try {
+    const data = await gapi('https://people.googleapis.com/v1/contactGroups', { pageSize: 100 });
+    const groups = (data.contactGroups || []).filter(g => g.groupType === 'USER_CONTACT_GROUP');
+    labelsCache = groups;
+    renderLabels(groups);
+  } catch(e) { list.innerHTML = '<div class="empty-state"><p>Could not load labels.<br>' + e.message + '</p></div>'; }
+}
+
+function renderLabels(groups) {
+  const list = document.getElementById('labels-list');
+  if (!groups.length) { list.innerHTML = '<div class="empty-state"><p>No labels found.</p></div>'; return; }
+  list.innerHTML = groups.map((g,i) =>
+    `<div class="label-item" onclick="openLabel('${g.resourceName}','${escHtml(g.name)}')">
+      <div class="label-dot" style="background:${labelColor(i)}"></div>
+      <div class="label-name">${escHtml(g.name)}</div>
+      <div class="label-count">${g.memberCount || ''}</div>
+      <div class="label-chevron">›</div>
+    </div>`
+  ).join('');
+}
+
+const COLORS = ['#0a84ff','#30d158','#ff9f0a','#bf5af2','#ff375f','#5ac8fa','#ffd60a'];
+function labelColor(i) { return COLORS[i % COLORS.length]; }
+
+async function openLabel(resourceName, labelName) {
+  currentContacts = [];
+  currentIdx = 0;
+  document.getElementById('swiper-label-name').textContent = labelName;
+  showScreen('swiper');
+  document.getElementById('nav-dots').innerHTML = '';
+  document.getElementById('card-stage').innerHTML =
+    '<div class="loading" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;"><div class="spinner"></div>Loading contacts…</div>';
+
+  try {
+    // get member resource names
+    const grpData = await gapi(`https://people.googleapis.com/v1/${resourceName}`, { maxMembers: 500 });
+    const members = grpData.memberResourceNames || [];
+    if (!members.length) {
+      document.getElementById('card-stage').innerHTML = '<div class="empty-state" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;"><p>No contacts in this label</p></div>';
+      return;
+    }
+
+    // batch get
+    const fields = 'names,emailAddresses,phoneNumbers,organizations,photos';
+    const batchSize = 50;
+    let allPeople = [];
+    for (let i = 0; i < members.slice(0, 200).length; i += batchSize) {
+      const chunk = members.slice(i, i + batchSize);
+      const d = await gapi('https://people.googleapis.com/v1/people:batchGet', {
+        resourceNames: chunk.join(','), // will be array-serialised by URLSearchParams — need manual build
+      });
+      // rebuild manually for repeated params
+      const qs = chunk.map(r => 'resourceNames=' + encodeURIComponent(r)).join('&') + '&personFields=' + fields;
+      const r = await fetch('https://people.googleapis.com/v1/people:batchGet?' + qs, {
+        headers: { Authorization: 'Bearer ' + accessToken }
+      });
+      const bd = await r.json();
+      (bd.responses || []).forEach(resp => { if (resp.person) allPeople.push(resp.person); });
+    }
+
+    currentContacts = allPeople.map(normalisePerson);
+    renderSwiper();
+  } catch(e) {
+    showToast('Failed to load contacts: ' + e.message);
+    showScreen('labels');
+  }
+}
+
+// ── SEARCH ────────────────────────────────────────────
+function onSearch(q) {
+  clearTimeout(searchTimer);
+  if (q.length < 2) {
+    document.getElementById('search-results').innerHTML = '<div class="empty-state"><p>Type a name to find contacts</p></div>';
+    return;
+  }
+  searchTimer = setTimeout(() => doSearch(q), 350);
+}
+
+async function doSearch(q) {
+  const el = document.getElementById('search-results');
+  el.innerHTML = '<div class="loading"><div class="spinner"></div>Searching…</div>';
+  try {
+    const fields = 'names,emailAddresses,phoneNumbers,organizations,photos';
+    const data = await gapi('https://people.googleapis.com/v1/people:searchContacts', { query: q, readMask: fields, pageSize: 20 });
+    const results = (data.results || []).map(r => normalisePerson(r.person));
+    if (!results.length) { el.innerHTML = '<div class="empty-state"><p>No contacts found</p></div>'; return; }
+    el.innerHTML = results.map((c, i) => `
+      <div class="search-result-item" onclick="openSingleContact(${i}, ${JSON.stringify(results).split('"').join('&quot;')})">
+        ${c.photo
+          ? `<img src="${c.photo}" class="contact-thumb" onerror="this.style.display='none'">`
+          : `<div class="contact-thumb-initials">${initials(c.name)}</div>`
+        }
+        <div>
+          <div class="search-result-name">${escHtml(c.name)}</div>
+          <div class="search-result-sub">${escHtml(c.company || c.email || '')}</div>
+        </div>
+      </div>
+    `).join('');
+    // store results for swiper
+    window._searchResults = results;
+    el.innerHTML = results.map((c, i) => `
+      <div class="search-result-item" onclick="openSearchResult(${i})">
+        ${c.photo
+          ? `<img src="${c.photo}" class="contact-thumb">`
+          : `<div class="contact-thumb-initials">${initials(c.name)}</div>`
+        }
+        <div>
+          <div class="search-result-name">${escHtml(c.name)}</div>
+          <div class="search-result-sub">${escHtml(c.company || c.email || '')}</div>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) { el.innerHTML = '<div class="empty-state"><p>Search failed: ' + e.message + '</p></div>'; }
+}
+
+function openSearchResult(idx) {
+  currentContacts = window._searchResults || [];
+  currentIdx = idx;
+  document.getElementById('swiper-label-name').textContent = 'Search result';
+  showScreen('swiper');
+  renderSwiper();
+}
+
+// ── SWIPER ────────────────────────────────────────────
+function renderSwiper() {
+  const stage = document.getElementById('card-stage');
+  stage.innerHTML = '';
+  closeOverlay();
+  if (!currentContacts.length) {
+    stage.innerHTML = '<div class="empty-state" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff"><p>No contacts</p></div>';
+    return;
+  }
+  updateCounter();
+  buildCards();
+  buildDots();
+  setupTouch();
+}
+
+function buildCards() {
+  const stage = document.getElementById('card-stage');
+  stage.innerHTML = '';
+  const show = [-1, 0, 1].map(o => currentIdx + o).filter(i => i >= 0 && i < currentContacts.length);
+  show.forEach(i => {
+    const card = makeCard(currentContacts[i], i);
+    card.style.transform = `translateX(${(i - currentIdx) * 100}%)`;
+    stage.appendChild(card);
+  });
+  if (currentContacts.length > 1 && currentIdx === 0) {
+    const hint = document.createElement('div');
+    hint.className = 'swipe-hint';
+    hint.innerHTML = '<span class="hint-arrow">←</span><span style="font-size:12px;color:rgba(255,255,255,0.5);align-self:center">swipe</span><span class="hint-arrow">→</span>';
+    stage.appendChild(hint);
+  }
+}
+
+function makeCard(c, idx) {
+  const div = document.createElement('div');
+  div.className = 'contact-card';
+  div.dataset.idx = idx;
+
+  if (c.photo) {
+    div.innerHTML = `
+      <img class="card-photo" src="${c.photo}" onerror="this.parentNode.querySelector('.card-photo-placeholder').style.display='flex';this.style.display='none'">
+      <div class="card-photo-placeholder" style="display:none">
+        <div class="card-initials-big">${initials(c.name)}</div>
+        <div class="card-no-photo-name">${escHtml(c.name)}</div>
+      </div>
+      <div class="card-gradient"></div>
+      <div class="card-info">
+        <div class="card-name">${escHtml(c.name)}</div>
+        ${c.company ? `<div class="card-company">${escHtml(c.company)}</div>` : ''}
+        <div class="card-details-row">
+          ${c.phone ? `<a class="card-detail-pill" href="tel:${c.phone}">📞 ${escHtml(c.phone)}</a>` : ''}
+          ${c.email ? `<a class="card-detail-pill" href="mailto:${c.email}">✉️ ${escHtml(c.email)}</a>` : ''}
+        </div>
+      </div>
+      <div class="tap-hint">tap for details</div>
+    `;
+    div.addEventListener('click', e => {
+      if (!isDragging && Math.abs(diffX) < 5) openOverlay(c);
+    });
+  } else {
+    div.innerHTML = `
+      <div class="card-photo-placeholder">
+        <div class="card-initials-big">${initials(c.name)}</div>
+      </div>
+      <div class="card-nophoto-data">
+        <div class="nophoto-name">${escHtml(c.name)}</div>
+        ${c.company ? `<div class="nophoto-row"><span class="nophoto-label">Company</span>${escHtml(c.company)}</div>` : ''}
+        ${c.phone ? `<div class="nophoto-row"><span class="nophoto-label">Phone</span><a href="tel:${c.phone}" style="color:var(--accent)">${escHtml(c.phone)}</a></div>` : ''}
+        ${c.email ? `<div class="nophoto-row"><span class="nophoto-label">Email</span><a href="mailto:${c.email}" style="color:var(--accent)">${escHtml(c.email)}</a></div>` : ''}
+        ${c.title ? `<div class="nophoto-row"><span class="nophoto-label">Title</span>${escHtml(c.title)}</div>` : ''}
+      </div>
+    `;
+  }
+  return div;
+}
+
+function updateCounter() {
+  document.getElementById('swiper-counter').textContent =
+    (currentIdx + 1) + ' / ' + currentContacts.length;
+}
+
+function buildDots() {
+  const wrap = document.getElementById('nav-dots');
+  if (currentContacts.length <= 1) { wrap.innerHTML = ''; return; }
+  const max = Math.min(currentContacts.length, 11);
+  wrap.innerHTML = Array.from({length: max}, (_, i) =>
+    `<div class="nav-dot ${i === currentIdx % max ? 'active' : ''}"></div>`
+  ).join('');
+}
+
+function updateDots() {
+  const dots = document.querySelectorAll('.nav-dot');
+  const max = Math.min(currentContacts.length, 11);
+  dots.forEach((d, i) => d.classList.toggle('active', i === currentIdx % max));
+}
+
+function navigateTo(idx) {
+  if (idx < 0 || idx >= currentContacts.length) return;
+  const prev = currentIdx;
+  currentIdx = idx;
+  closeOverlay();
+  updateCounter();
+  updateDots();
+  animateCards(prev);
+}
+
+function animateCards(prevIdx) {
+  const stage = document.getElementById('card-stage');
+  const dir = currentIdx > prevIdx ? -1 : 1;
+
+  // slide existing cards out
+  stage.querySelectorAll('.contact-card').forEach(card => {
+    card.classList.add('animating');
+    const i = parseInt(card.dataset.idx);
+    card.style.transform = `translateX(${(i - currentIdx) * 100}%)`;
+  });
+
+  // add new card if needed
+  const neededIdx = dir === -1 ? currentIdx + 1 : currentIdx - 1;
+  if (neededIdx >= 0 && neededIdx < currentContacts.length && !stage.querySelector(`[data-idx="${neededIdx}"]`)) {
+    const card = makeCard(currentContacts[neededIdx], neededIdx);
+    card.style.transform = `translateX(${(neededIdx - currentIdx) * 100}%)`;
+    card.classList.add('animating');
+    stage.appendChild(card);
+  }
+
+  // remove off-screen cards after transition
+  setTimeout(() => {
+    stage.querySelectorAll('.contact-card').forEach(card => {
+      const i = parseInt(card.dataset.idx);
+      if (Math.abs(i - currentIdx) > 1) card.remove();
+      card.classList.remove('animating');
+    });
+  }, 320);
+}
+
+// ── TOUCH ────────────────────────────────────────────
+function setupTouch() {
+  const stage = document.getElementById('card-stage');
+  stage.addEventListener('touchstart', onTouchStart, { passive: true });
+  stage.addEventListener('touchmove', onTouchMove, { passive: true });
+  stage.addEventListener('touchend', onTouchEnd);
+}
+
+function onTouchStart(e) {
+  if (e.touches.length > 1) return;
+  startX = e.touches[0].clientX;
+  startY = e.touches[0].clientY;
+  diffX = 0;
+  isDragging = false;
+}
+
+function onTouchMove(e) {
+  if (e.touches.length > 1) return;
+  diffX = e.touches[0].clientX - startX;
+  const diffY = Math.abs(e.touches[0].clientY - startY);
+  if (!isDragging && Math.abs(diffX) > 8 && Math.abs(diffX) > diffY) isDragging = true;
+  if (!isDragging) return;
+
+  const stage = document.getElementById('card-stage');
+  stage.querySelectorAll('.contact-card').forEach(card => {
+    const i = parseInt(card.dataset.idx);
+    card.style.transform = `translateX(calc(${(i - currentIdx) * 100}% + ${diffX}px))`;
+  });
+}
+
+function onTouchEnd() {
+  if (!isDragging) return;
+  const threshold = window.innerWidth * 0.3;
+  if (diffX < -threshold && currentIdx < currentContacts.length - 1) {
+    navigateTo(currentIdx + 1);
+  } else if (diffX > threshold && currentIdx > 0) {
+    navigateTo(currentIdx - 1);
+  } else {
+    // snap back
+    const stage = document.getElementById('card-stage');
+    stage.querySelectorAll('.contact-card').forEach(card => {
+      card.classList.add('animating');
+      const i = parseInt(card.dataset.idx);
+      card.style.transform = `translateX(${(i - currentIdx) * 100}%)`;
+      setTimeout(() => card.classList.remove('animating'), 300);
+    });
+  }
+  setTimeout(() => { isDragging = false; }, 50);
+}
+
+// ── OVERLAY ───────────────────────────────────────────
+function openOverlay(c) {
+  const ov = document.getElementById('data-overlay');
+  const content = document.getElementById('overlay-content');
+  content.innerHTML = `
+    <h2>${escHtml(c.name)}</h2>
+    ${c.company || c.title ? `<div class="sub">${escHtml([c.title, c.company].filter(Boolean).join(' · '))}</div>` : '<div class="sub"></div>'}
+    ${c.phone ? `<div class="data-field"><div class="data-field-label">Phone</div><div class="data-field-value"><a href="tel:${c.phone}">${escHtml(c.phone)}</a></div></div>` : ''}
+    ${c.email ? `<div class="data-field"><div class="data-field-label">Email</div><div class="data-field-value"><a href="mailto:${c.email}">${escHtml(c.email)}</a></div></div>` : ''}
+    ${c.address ? `<div class="data-field"><div class="data-field-label">Address</div><div class="data-field-value">${escHtml(c.address)}</div></div>` : ''}
+  `;
+  ov.classList.add('visible');
+}
+
+function closeOverlay() {
+  document.getElementById('data-overlay').classList.remove('visible');
+}
+
+function exitSwiper() {
+  closeOverlay();
+  // go back to where we came from
+  const prev = document.getElementById('screen-labels').classList.contains('active') ? 'labels' :
+    document.getElementById('screen-search').classList.contains('active') ? 'search' : 'home';
+  history.back();
+  showScreen('home');
+  if (window._fromSearch) showScreen('search'); else showScreen('labels');
+}
+
+// ── UTILS ─────────────────────────────────────────────
+function normalisePerson(p) {
+  const name = (p.names || [])[0];
+  const phone = (p.phoneNumbers || [])[0];
+  const email = (p.emailAddresses || [])[0];
+  const org = (p.organizations || [])[0];
+  const photo = (p.photos || []).find(ph => !ph.default);
+  const addr = (p.addresses || [])[0];
+  return {
+    name: name ? (name.displayName || [name.givenName, name.familyName].filter(Boolean).join(' ')) : 'Unknown',
+    phone: phone ? phone.value : null,
+    email: email ? email.value : null,
+    company: org ? org.name : null,
+    title: org ? org.title : null,
+    photo: photo ? photo.url : null,
+    address: addr ? addr.formattedValue : null,
+  };
+}
+
+function initials(name) {
+  return (name || '?').split(' ').map(w => w[0]).filter(Boolean).slice(0,2).join('').toUpperCase();
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+// ── INIT ──────────────────────────────────────────────
+checkAuth();
+</script>
+</body>
+</html>
