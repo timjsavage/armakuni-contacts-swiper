@@ -4,26 +4,24 @@
 <body>
 <p style="font-family:sans-serif;padding:40px">Signing in, please wait...</p>
 <script>
+  console.log('callback: hash=', location.hash.substring(0, 50));
   const hash = new URLSearchParams(location.hash.slice(1));
   const token = hash.get('access_token');
   const expiry = hash.get('expires_in');
+  console.log('callback: token=', token ? token.substring(0,20) : 'null', 'expiry=', expiry);
   if (token) {
-    localStorage.setItem('gac_token', token);
-    localStorage.setItem('gac_expiry', String(Date.now() + parseInt(expiry || '3600') * 1000));
-    // Verify it was saved before redirecting
-    const saved = localStorage.getItem('gac_token');
-    if (saved) {
-      setTimeout(() => {
-        window.location.replace('armakuni-contacts-swiper.html');
-      }, 500);
-    } else {
-      // localStorage failed - pass via URL instead
-      const exp = Date.now() + parseInt(expiry || '3600') * 1000;
-      setTimeout(() => {
-        window.location.replace('armakuni-contacts-swiper.html?token=' + encodeURIComponent(token) + '&expiry=' + exp);
-      }, 500);
+    try {
+      localStorage.setItem('gac_token', token);
+      localStorage.setItem('gac_expiry', String(Date.now() + parseInt(expiry || '3600') * 1000));
+      const verify = localStorage.getItem('gac_token');
+      console.log('callback: saved and verified=', verify ? verify.substring(0,20) : 'null');
+    } catch(e) {
+      console.log('callback: localStorage error', e);
     }
+    console.log('callback: redirecting...');
+    window.location.replace('armakuni-contacts-swiper.html');
   } else {
+    console.log('callback: no token found');
     document.body.innerHTML = '<p style="font-family:sans-serif;padding:40px">Auth failed — <a href="armakuni-contacts-swiper.html">try again</a></p>';
   }
 </script>
