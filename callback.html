@@ -2,14 +2,30 @@
 <html>
 <head><title>Signing in...</title></head>
 <body>
-<pre id="debug" style="font-family:monospace;padding:20px;font-size:13px"></pre>
+<p style="font-family:sans-serif;padding:40px">Signing in, please wait...</p>
 <script>
-  const dbg = document.getElementById('debug');
-  dbg.textContent = [
-    'full href: ' + location.href,
-    'hash: "' + location.hash + '"',
-    'search: "' + location.search + '"',
-  ].join('\n');
+  const hash = new URLSearchParams(location.hash.slice(1));
+  const token = hash.get('access_token');
+  const expiry = hash.get('expires_in');
+  if (token) {
+    localStorage.setItem('gac_token', token);
+    localStorage.setItem('gac_expiry', String(Date.now() + parseInt(expiry || '3600') * 1000));
+    // Verify it was saved before redirecting
+    const saved = localStorage.getItem('gac_token');
+    if (saved) {
+      setTimeout(() => {
+        window.location.replace('armakuni-contacts-swiper.html');
+      }, 500);
+    } else {
+      // localStorage failed - pass via URL instead
+      const exp = Date.now() + parseInt(expiry || '3600') * 1000;
+      setTimeout(() => {
+        window.location.replace('armakuni-contacts-swiper.html?token=' + encodeURIComponent(token) + '&expiry=' + exp);
+      }, 500);
+    }
+  } else {
+    document.body.innerHTML = '<p style="font-family:sans-serif;padding:40px">Auth failed — <a href="armakuni-contacts-swiper.html">try again</a></p>';
+  }
 </script>
 </body>
 </html>
