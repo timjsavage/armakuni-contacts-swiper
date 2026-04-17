@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Contacts">
-<title>Contacts Swiper 2</title>
+<title>Contacts Swiper</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -415,19 +415,14 @@ let searchTimer = null;
 
 // ── AUTH ──────────────────────────────────────────────
 function startLogin() {
-  if (typeof google === 'undefined') { showToast('Google library not loaded, please refresh'); return; }
-  const client = google.accounts.oauth2.initTokenClient({
+  const params = new URLSearchParams({
     client_id: CLIENT_ID,
+    redirect_uri: 'https://timjsavage.github.io/armakuni-contacts-swiper/callback.html',
+    response_type: 'token',
     scope: SCOPES,
-    callback: (resp) => {
-      if (resp.error) { showToast('Sign in failed: ' + resp.error); return; }
-      accessToken = resp.access_token;
-      const expiry = Date.now() + (parseInt(resp.expires_in || '3600') * 1000);
-      try { localStorage.setItem('gac_token', accessToken); localStorage.setItem('gac_expiry', String(expiry)); } catch(e) {}
-      initApp();
-    }
+    prompt: 'select_account'
   });
-  client.requestAccessToken({ prompt: 'select_account' });
+  location.href = 'https://accounts.google.com/o/oauth2/auth?' + params;
 }
 
 function checkAuth() {
