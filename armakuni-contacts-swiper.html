@@ -429,12 +429,17 @@ function checkAuth() {
   const token = hash.get('access_token');
   if (token) {
     accessToken = token;
+    const expiry = Date.now() + (parseInt(hash.get('expires_in') || '3600') * 1000);
+    try { localStorage.setItem('gac_token', token); localStorage.setItem('gac_expiry', String(expiry)); } catch(e) {}
     history.replaceState(null, '', location.pathname);
     initApp();
     return;
   }
-  const saved = sessionStorage.getItem('gac_token');
-  if (saved) { accessToken = saved; initApp(); }
+  try {
+    const saved = localStorage.getItem('gac_token');
+    const expiry = parseInt(localStorage.getItem('gac_expiry') || '0');
+    if (saved && Date.now() < expiry) { accessToken = saved; initApp(); return; }
+  } catch(e) {}
 }
 
 async function initApp() {
@@ -455,7 +460,7 @@ async function initApp() {
 }
 
 function signOut() {
-  sessionStorage.removeItem('gac_token');
+  try { localStorage.removeItem('gac_token'); localStorage.removeItem('gac_expiry'); } catch(e) {}
   accessToken = null;
   showScreen('login');
 }
