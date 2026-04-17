@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html>
-<head><title>Auth</title></head>
+<head><title>Signing in...</title></head>
 <body>
 <script>
   const hash = new URLSearchParams(location.hash.slice(1));
@@ -8,9 +8,11 @@
   const expiry = hash.get('expires_in');
   if (token) {
     localStorage.setItem('gac_token', token);
-    localStorage.setItem('gac_expiry', String(Date.now() + parseInt(expiry||'3600')*1000));
+    localStorage.setItem('gac_expiry', String(Date.now() + parseInt(expiry || '3600') * 1000));
+    window.location.href = 'armakuni-contacts-swiper.html';
+  } else {
+    document.body.innerHTML = '<p style="font-family:sans-serif;padding:40px">Auth failed — <a href="armakuni-contacts-swiper.html">try again</a></p>';
   }
-  window.location.href = 'armakuni-contacts-swiper.html';
 </script>
 </body>
 </html>
