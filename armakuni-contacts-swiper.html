@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Contacts">
 <title>Contacts Swiper</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
@@ -414,27 +415,22 @@ let searchTimer = null;
 
 // ── AUTH ──────────────────────────────────────────────
 function startLogin() {
-  const params = new URLSearchParams({
+  if (typeof google === 'undefined') { showToast('Google library not loaded, please refresh'); return; }
+  const client = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
-    redirect_uri: location.origin + location.pathname,
-    response_type: 'token',
     scope: SCOPES,
-    prompt: 'select_account'
+    callback: (resp) => {
+      if (resp.error) { showToast('Sign in failed: ' + resp.error); return; }
+      accessToken = resp.access_token;
+      const expiry = Date.now() + (parseInt(resp.expires_in || '3600') * 1000);
+      try { localStorage.setItem('gac_token', accessToken); localStorage.setItem('gac_expiry', String(expiry)); } catch(e) {}
+      initApp();
+    }
   });
-  location.href = 'https://accounts.google.com/o/oauth2/auth?' + params;
+  client.requestAccessToken({ prompt: 'select_account' });
 }
 
 function checkAuth() {
-  const hash = new URLSearchParams(location.hash.slice(1));
-  const token = hash.get('access_token');
-  if (token) {
-    accessToken = token;
-    const expiry = Date.now() + (parseInt(hash.get('expires_in') || '3600') * 1000);
-    try { localStorage.setItem('gac_token', token); localStorage.setItem('gac_expiry', String(expiry)); } catch(e) {}
-    history.replaceState(null, '', location.pathname);
-    initApp();
-    return;
-  }
   try {
     const saved = localStorage.getItem('gac_token');
     const expiry = parseInt(localStorage.getItem('gac_expiry') || '0');
@@ -443,7 +439,6 @@ function checkAuth() {
 }
 
 async function initApp() {
-  sessionStorage.setItem('gac_token', accessToken);
   try {
     const res = await gapi('https://www.googleapis.com/oauth2/v3/userinfo');
     const name = res.given_name || res.name || 'there';
