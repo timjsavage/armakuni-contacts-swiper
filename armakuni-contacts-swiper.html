@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Contacts">
-<title>Contacts Swiper 6</title>
+<title>Contacts Swiper 7</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -455,31 +455,6 @@ function checkAuth() {
 
 async function initApp() {
   console.log('initApp: accessToken=', accessToken ? 'present' : 'null');
-  try {
-    const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: { Authorization: 'Bearer ' + accessToken }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      const name = data.given_name || data.name || 'there';
-      document.getElementById('home-greeting').textContent = 'Hello, ' + name + '!';
-      const avatarWrap = document.getElementById('user-avatar-wrap');
-      if (data.picture) {
-        avatarWrap.innerHTML = `<img src="${data.picture}" class="user-avatar" onclick="if(confirm('Sign out?'))signOut()" title="Sign out">`;
-      } else {
-        const ini = (data.name || '?').split(' ').map(w => w[0]).slice(0,2).join('');
-        avatarWrap.innerHTML = `<div class="user-initials" onclick="if(confirm('Sign out?'))signOut()" title="Sign out">${ini}</div>`;
-      }
-    } else if (res.status === 401) {
-      console.log('initApp: token rejected by userinfo, clearing and forcing re-login');
-      try { localStorage.removeItem('gac_token'); localStorage.removeItem('gac_expiry'); } catch(e) {}
-      accessToken = null;
-      showScreen('login');
-      return;
-    }
-  } catch(e) {
-    console.log('initApp: userinfo fetch failed', e);
-  }
   showScreen('home');
 }
 
