@@ -2,7 +2,15 @@
 <html>
 <head><title>Signing in...</title></head>
 <body>
+<pre id="debug" style="font-family:monospace;padding:20px;font-size:13px"></pre>
 <script>
+  const dbg = document.getElementById('debug');
+  dbg.textContent = [
+    'href: ' + location.href,
+    'hash: ' + location.hash,
+    'search: ' + location.search,
+  ].join('\n');
+
   const hash = new URLSearchParams(location.hash.slice(1));
   const token = hash.get('access_token');
   const expiry = hash.get('expires_in');
@@ -11,7 +19,7 @@
     localStorage.setItem('gac_expiry', String(Date.now() + parseInt(expiry || '3600') * 1000));
     window.location.href = 'armakuni-contacts-swiper.html';
   } else {
-    document.body.innerHTML = '<p style="font-family:sans-serif;padding:40px">Auth failed — <a href="armakuni-contacts-swiper.html">try again</a></p>';
+    dbg.textContent += '\n\nNo token found in hash.';
   }
 </script>
 </body>
