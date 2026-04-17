@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Contacts">
-<title>Contacts Swiper 3</title>
+<title>Contacts Swiper</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -426,10 +426,25 @@ function startLogin() {
 }
 
 function checkAuth() {
+  // Check if token was passed via URL from callback.html
+  const params = new URLSearchParams(location.search);
+  const token = params.get('token');
+  const expiry = params.get('expiry');
+  if (token && expiry) {
+    accessToken = token;
+    try {
+      localStorage.setItem('gac_token', token);
+      localStorage.setItem('gac_expiry', expiry);
+    } catch(e) {}
+    history.replaceState(null, '', location.pathname);
+    initApp();
+    return;
+  }
+  // Check localStorage for existing session
   try {
     const saved = localStorage.getItem('gac_token');
-    const expiry = parseInt(localStorage.getItem('gac_expiry') || '0');
-    if (saved && Date.now() < expiry) { accessToken = saved; initApp(); return; }
+    const savedExpiry = parseInt(localStorage.getItem('gac_expiry') || '0');
+    if (saved && Date.now() < savedExpiry) { accessToken = saved; initApp(); return; }
   } catch(e) {}
 }
 
