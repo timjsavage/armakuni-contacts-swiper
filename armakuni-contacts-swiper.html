@@ -445,17 +445,16 @@ async function initApp() {
     document.getElementById('home-greeting').textContent = 'Hello, ' + name + '!';
     const avatarWrap = document.getElementById('user-avatar-wrap');
     if (res.picture) {
-      avatarWrap.innerHTML = `<img src="${res.picture}" class="user-avatar" onclick="signOut()" title="Sign out">`;
+      avatarWrap.innerHTML = `<img src="${res.picture}" class="user-avatar" onclick="if(confirm('Sign out?'))signOut()" title="Sign out">`;
     } else {
       const initials = (res.name || '?').split(' ').map(w => w[0]).slice(0,2).join('');
-      avatarWrap.innerHTML = `<div class="user-initials" onclick="signOut()" title="Sign out">${initials}</div>`;
+      avatarWrap.innerHTML = `<div class="user-initials" onclick="if(confirm('Sign out?'))signOut()" title="Sign out">${initials}</div>`;
     }
   } catch(e) {}
   showScreen('home');
 }
 
 function signOut() {
-  if (!confirm('Sign out?')) return;
   sessionStorage.removeItem('gac_token');
   accessToken = null;
   showScreen('login');
@@ -515,6 +514,7 @@ const COLORS = ['#0a84ff','#30d158','#ff9f0a','#bf5af2','#ff375f','#5ac8fa','#ff
 function labelColor(i) { return COLORS[i % COLORS.length]; }
 
 async function openLabel(resourceName, labelName) {
+  window._fromSearch = false;
   currentContacts = [];
   currentIdx = 0;
   document.getElementById('swiper-label-name').textContent = labelName;
@@ -576,19 +576,6 @@ async function doSearch(q) {
     const data = await gapi('https://people.googleapis.com/v1/people:searchContacts', { query: q, readMask: fields, pageSize: 20 });
     const results = (data.results || []).map(r => normalisePerson(r.person));
     if (!results.length) { el.innerHTML = '<div class="empty-state"><p>No contacts found</p></div>'; return; }
-    el.innerHTML = results.map((c, i) => `
-      <div class="search-result-item" onclick="openSingleContact(${i}, ${JSON.stringify(results).split('"').join('&quot;')})">
-        ${c.photo
-          ? `<img src="${c.photo}" class="contact-thumb" onerror="this.style.display='none'">`
-          : `<div class="contact-thumb-initials">${initials(c.name)}</div>`
-        }
-        <div>
-          <div class="search-result-name">${escHtml(c.name)}</div>
-          <div class="search-result-sub">${escHtml(c.company || c.email || '')}</div>
-        </div>
-      </div>
-    `).join('');
-    // store results for swiper
     window._searchResults = results;
     el.innerHTML = results.map((c, i) => `
       <div class="search-result-item" onclick="openSearchResult(${i})">
@@ -606,6 +593,7 @@ async function doSearch(q) {
 }
 
 function openSearchResult(idx) {
+  window._fromSearch = true;
   currentContacts = window._searchResults || [];
   currentIdx = idx;
   document.getElementById('swiper-label-name').textContent = 'Search result';
@@ -818,12 +806,11 @@ function closeOverlay() {
 
 function exitSwiper() {
   closeOverlay();
-  // go back to where we came from
-  const prev = document.getElementById('screen-labels').classList.contains('active') ? 'labels' :
-    document.getElementById('screen-search').classList.contains('active') ? 'search' : 'home';
-  history.back();
-  showScreen('home');
-  if (window._fromSearch) showScreen('search'); else showScreen('labels');
+  if (window._fromSearch) {
+    showScreen('search');
+  } else {
+    showScreen('labels');
+  }
 }
 
 // ── UTILS ─────────────────────────────────────────────
