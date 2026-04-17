@@ -5,18 +5,11 @@
 <pre id="debug" style="font-family:monospace;padding:20px;font-size:13px"></pre>
 <script>
   const dbg = document.getElementById('debug');
-  const hash = new URLSearchParams(location.hash.slice(1));
-  const token = hash.get('access_token');
-  const expiry = hash.get('expires_in');
-
-  dbg.textContent = 'token found: ' + !!token;
-
-  if (token) {
-    const exp = Date.now() + parseInt(expiry || '3600') * 1000;
-    window.location.href = 'armakuni-contacts-swiper.html?token=' + encodeURIComponent(token) + '&expiry=' + exp;
-  } else {
-    dbg.textContent += '\nNo token in hash: ' + location.hash;
-  }
+  dbg.textContent = [
+    'full href: ' + location.href,
+    'hash: "' + location.hash + '"',
+    'search: "' + location.search + '"',
+  ].join('\n');
 </script>
 </body>
 </html>
